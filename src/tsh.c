@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
+
+bool checkInput(char *buffer);
 
 int main(int argc, char *argv[]) {
     FILE *infile;
@@ -13,21 +16,35 @@ int main(int argc, char *argv[]) {
     //3 ./''
 
     infile = fopen(argv[1], "r");
-    if (infile == NULL) {
-        perror("Couldn't open file");
-        exit(1);
+    if (infile != NULL) {
+        // batch mode
+
+        charCount = getline(&buffer, &bufferSize, infile);
+        if (charCount < 0) {
+            printf("EOF");
+        }
+
+        fclose(infile);
     }
 
     while(1) {
         printf("tsh> ");
-        charCount = getline(&buffer, &bufferSize, infile);
-        if (charCount < 0) {
-            printf("error");
-        }
-        printf("Num of characters read in: %s\n", charCount);
+        charCount = getline(&buffer, &bufferSize, stdin);
+        if (!checkInput(buffer))
+            exit(1);
+
+        //fork();
     }
 
     free(buffer);
-    fclose(infile);
     return 0;
+}
+
+bool checkInput(char *buffer) {
+    if (buffer == NULL)
+        return false;
+    if (buffer == "exit")
+        return false;
+
+    return true;
 }
