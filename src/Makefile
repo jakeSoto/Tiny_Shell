@@ -1,2 +1,2 @@
 output: tsh.c
-	gcc -o out tsh.c
+	gcc -o tsh tsh.c
