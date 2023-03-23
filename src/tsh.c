@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 
 /* Executes input given from interactive mode 
    after forking to a child process */
-void execInput(char *buffer) {
+static void execInput(char *buffer) {
     pid_t pid = fork();
 
     if (pid < 0) {
