@@ -3,22 +3,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <stdbool.h>
 
-bool checkInput(char *buffer);
-void execInput(char *command);
+void execInput(char *buffer);
 
 int main(int argc, char *argv[]) {
     FILE *infile;
     char *buffer = NULL;
     size_t bufferSize = 0;
     ssize_t charCount;
-    // use access to ensure the system call will succeed
-    //try 1. /bin/''
-    //2 /usr/bin/''
-    //3 ./''
 
-    /* Batch Mode */
+    /* Batch Mode 
     infile = fopen(argv[1], "r");
     if (infile != NULL) {
         charCount = getline(&buffer, &bufferSize, infile);
@@ -27,38 +21,26 @@ int main(int argc, char *argv[]) {
             exit(0);
         }
         fclose(infile);
-    }
+    } */
 
     /* Interactive mode */
     while(1) {
         printf("tsh> ");
         charCount = getline(&buffer, &bufferSize, stdin);
-        if (charCount < 0)
+        if (charCount < 0) {
             exit(0);
-        bool input;
-        if(!(input = checkInput(buffer)))
-            exit(0);
+        }
+        execInput(buffer);
     }
 
     free(buffer);
     return 0;
 }
 
-bool checkInput(char *buffer) {
-    char *delims[3] = {"/", "-", " "};
-    char *token = strtok(buffer, delims);
-    
-    while (token != NULL) {
-        printf("%s\n", token);
-        
-        execInput(token);
-        token = strtok(NULL, "\n");
-    }
-    return true;
-}
 
-void execInput(char *command) {
-    char* argsList[] = {"ls", NULL};
+/* Executes input given from interactive mode 
+   after forking to a child process */
+void execInput(char *buffer) {
     pid_t pid = fork();
 
     if (pid < 0) {
@@ -66,8 +48,18 @@ void execInput(char *command) {
         exit(0);
     }
     else if (pid == 0) {    // Child process
-        int execReturn = execvp(command, argsList);
-        if (execReturn < 0) {
+        int i = 0;
+        char *argsList[10];
+        char *token = strtok(buffer, " \n");
+
+        while (token != NULL) {
+            argsList[i] = token;
+            i++;
+            token = strtok(NULL, " \n");
+        }
+        argsList[i] = NULL;
+
+        if (execvp(argsList[0], argsList) < 0) {
             printf("Execvp() call failed.\n");
             exit(0);
         }
