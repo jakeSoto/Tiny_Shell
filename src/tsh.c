@@ -1,16 +1,20 @@
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
 
 void execInput(char *buffer);
 
 int main(int argc, char *argv[]) {
     FILE *infile;
-    char *buffer = NULL;
-    size_t bufferSize = 0;
-    ssize_t charCount;
+    char *buffer = NULL; //buf[80]
+    size_t bufferSize = 0;  //150 - 200
+    ssize_t nread;
+
+    // log commands, if log is enabled say its already on
 
     /* Batch Mode 
     infile = fopen(argv[1], "r");
@@ -26,11 +30,12 @@ int main(int argc, char *argv[]) {
     /* Interactive mode */
     while(1) {
         printf("tsh> ");
-        charCount = getline(&buffer, &bufferSize, stdin);
-        if (charCount < 0) {
+        if ((nread = getline(&buffer, &bufferSize, stdin)) == -1)
             exit(0);
-        }
-        execInput(buffer);
+        if (strcmp(buffer, "exit\n") == 0)
+            exit(0);
+        else
+            execInput(buffer);
     }
 
     free(buffer);
@@ -40,35 +45,37 @@ int main(int argc, char *argv[]) {
 
 /* Executes input given from interactive mode 
    after forking to a child process */
-static void execInput(char *buffer) {
+void execInput(char *buffer) {
     pid_t pid = fork();
 
     if (pid < 0) {
-        printf("A fork error has occurred.\n");
-        exit(0);
+        fprintf(stderr,"Fork Failed\n");
+		exit(0);
     }
     else if (pid == 0) {    // Child process
         int i = 0;
-        char *argsList[10];
-        char *token = strtok(buffer, " \n");
+        char *argsList[50];
+        argsList[i] = strsep(&buffer, " \t\n");
 
-        while (token != NULL) {
-            argsList[i] = token;
-            i++;
-            token = strtok(NULL, " \n");
+        while (argsList[i] != NULL) {
+            if (*argsList[i] != '\0')
+                i++;
+            argsList[i] = strsep(&buffer, " \t\n");
         }
-        argsList[i] = NULL;
 
-        if (execvp(argsList[0], argsList) < 0) {
-            printf("Execvp() call failed.\n");
-            exit(0);
+        // arg[0] = PATH
+        int execStatus = execvp(argsList[0], argsList);
+        if (execStatus == -1) {
+            fprintf(stderr,"Exec Failed\n");
+		    exit(0);
         }
     }
     else {                  // Parent process
-        int awaitReturn = wait(0);
-        if (awaitReturn < 0) {
-            printf("Wait() call failed.\n");
-            exit(0);
+        pid_t pid2 = wait(NULL);
+        if (pid2 < 0) {
+            fprintf(stderr,"Wait Failed\n");
+		    exit(0);
         }
+        fflush(stderr);
     }
 }
