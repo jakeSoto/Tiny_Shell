@@ -50,16 +50,15 @@ void printErrorMessage(char *userInitials) {
 char ** getArgsList(char *buffer) {
     int i = 0;
     static char *argsList[50];
-
-    if (loggingFlag)
-        fputs(buffer, logFile);
-
     argsList[i] = strsep(&buffer, " :\t\n");
+    
     while (argsList[i] != NULL) {
         if (*argsList[i] != '\0')
             i++;
         argsList[i] = strsep(&buffer, " :\t\n");
     }
+    if (loggingFlag)
+        puts(buffer, logFile);
 
     return argsList;
 }
