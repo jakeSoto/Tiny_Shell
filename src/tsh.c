@@ -10,22 +10,9 @@ void execInput(char *buffer);
 
 int main(int argc, char *argv[]) {
     FILE *infile;
-    char *buffer = NULL; //buf[80]
-    size_t bufferSize = 0;  //150 - 200
+    char *buffer = NULL;
+    size_t bufferSize = 0;
     ssize_t nread;
-
-    // log commands, if log is enabled say its already on
-
-    /* Batch Mode 
-    infile = fopen(argv[1], "r");
-    if (infile != NULL) {
-        charCount = getline(&buffer, &bufferSize, infile);
-        if (charCount < 0) {
-            perror("EOF");
-            exit(0);
-        }
-        fclose(infile);
-    } */
 
     /* Interactive mode */
     while(1) {
@@ -63,7 +50,6 @@ void execInput(char *buffer) {
             argsList[i] = strsep(&buffer, " \t\n");
         }
 
-        // arg[0] = PATH
         int execStatus = execvp(argsList[0], argsList);
         if (execStatus == -1) {
             fprintf(stderr,"Exec Failed\n");
