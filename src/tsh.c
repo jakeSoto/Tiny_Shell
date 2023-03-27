@@ -6,7 +6,7 @@
 #include <sys/wait.h>
 
 
-void execInput(char *buffer);
+void executeInput(char *buffer);
 
 int main(int argc, char *argv[]) {
     FILE *infile;
@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
         if (strcmp(buffer, "exit\n") == 0)
             exit(0);
         else
-            execInput(buffer);
+            executeInput(buffer);
     }
 
     free(buffer);
@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
 
 /* Executes input given from interactive mode 
    after forking to a child process */
-void execInput(char *buffer) {
+void executeInput(char *buffer) {
     pid_t pid = fork();
 
     if (pid < 0) {
