@@ -9,8 +9,9 @@
 char *myInitials = "JS";
 bool loggingFlag = false;
 FILE *logFile = NULL;
-char ** getArgsList(char *buffer);
+char ** getArgsList(char *buffer, char *delims);
 bool cmdChecker(char *argsList[]);
+void cmdExecutor(int cmd, char *argsList[]);
 void executeCommand(char *argsList[]);
 
 
@@ -27,7 +28,7 @@ int main(int argc, char *argv[]) {
         if ((nread = getline(&buffer, &bufferSize, stdin)) == -1)
             exit(0);
 
-        args_list = getArgsList(buffer);
+        args_list = getArgsList(buffer, " \t\n");
         if (!cmdChecker(args_list))
             executeCommand(args_list);
     }
@@ -47,81 +48,57 @@ void printErrorMessage(char *userInitials) {
 
 /*  Returns character array containing arguments
     from input seperated by white space */
-char ** getArgsList(char *buffer) {
+char ** getArgsList(char *buffer, char *delims) {
     int i = 0;
     static char *argsList[50];
-    argsList[i] = strsep(&buffer, " :\t\n");
+    argsList[i] = strsep(&buffer, delims);
     
     while (argsList[i] != NULL) {
         if (*argsList[i] != '\0')
             i++;
-        argsList[i] = strsep(&buffer, " :\t\n");
+        argsList[i] = strsep(&buffer, delims);
     }
-    if (loggingFlag)
-        puts(buffer, logFile);
 
     return argsList;
 }
 
 /* Checks input for built-in commands */
 bool cmdChecker(char *argsList[]) {
-    int i = 0;
+    //int i = 0;
     static char *commands[4] = {"exit\0", "cd\0", "path\0", "logging\0"};
-
-    while (argsList[i] != NULL) {
-        for (int j = 0; j < 4; j++) {
-            if (strcmp(argsList[i], commands[j]) == 0) {
-                if (j == 0)             // exit
-                    exit(0);
-                else if (j == 1) {      // change directory
-                    if (chdir(argsList[1]) == -1)
-                        printErrorMessage(myInitials);
-                    return true;
-                }
-                else if (j == 2) {      // path
-                    static char *path[1024] = {"/bin"};
-                    int pathCounter = 0;
-
-                    if (argsList[i+1] != NULL) {
-                        do {
-                            pathCounter++;
-                            path[pathCounter] = argsList[i++];
-                        } while (argsList[i] != NULL);
-                    }
-                    else {
-                        pathCounter = 0;
-                        printf("path is set to ");
-                        while (path[pathCounter] != NULL) {
-                            printf("%s:", path[pathCounter]);
-                            pathCounter++;
-                        }
-                        printf("\n");
-                    }
-                    
-                    return true;
-                }
-                else if (j == 3) {      // logging
-                    if (argsList[i+1] == NULL)
-                        return false;
-                    else if (strcmp(argsList[i+1], "off\0") == 0) {
-                        loggingFlag = false;
-                        
-                        if (logFile == NULL)
-                            return true;
-                        else if (fclose(logFile) != 0)
-                            printErrorMessage(myInitials);
-                    }
-                    else {
-                        logFile = fopen(argsList[i+1], "w");
-                        loggingFlag = true;
-                    }
-                    return true;
-                }
-            }
+    for (int i = 0; i < 4; i++) {
+        if (strcmp(argsList[0], commands[i]) == 0) {
+            cmdExecutor(i, argsList);
+            return true;
         }
-        i++;
     }
     return false;
+}
+
+void cmdExecutor(int cmd, char *argsList[]) {
+    if (cmd == 0)             // exit
+        exit(0);
+    else if (cmd == 1) {      // change directory
+        if (chdir(argsList[1]) == -1)
+            printErrorMessage(myInitials);
+    }
+    else if (cmd == 2) {      // path
+        char path[1024] = {"/bin"};
+        int pathCount = 1;
+        
+        if (argsList[1] == NULL) {  //no args
+            if (getcwd(path, sizeof(path)) == NULL)
+                printErrorMessage(myInitials);
+            printf("Path is set to: %s\n", path);
+        }
+        else {  //args
+            path[pathCount] = strsep(argsList[1], ":");
+            pathCount++;
+        }
+    }
+    else if (cmd == 3) {        // logging
+
+    }
 }
 
 /* Executes input given from interactive mode 
@@ -132,7 +109,7 @@ void executeCommand(char *argsList[]) {
     if (pid < 0)
         printErrorMessage(myInitials);
     else if (pid == 0) {    // Child process
-        int execStatus = execvp(argsList[0], argsList);
+        int execStatus = execvp(&argsList[0], argsList);
         if (execStatus == -1)
             printErrorMessage(myInitials);
     }
