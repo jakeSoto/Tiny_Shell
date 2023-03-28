@@ -6,9 +6,15 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+/* Global Variables */
 char *myInitials = "JS";
+bool loggingFlag = false;
+FILE *logFile = NULL;
+
+/* Function Definitions */
 char ** getArgsList(char *buffer);
 bool cmdChecker(char *argsList[]);
+void cmdExecutor(int cmd, char *argsList[]);
 void executeCommand(char *argsList[]);
 
 
@@ -51,8 +57,13 @@ char ** getArgsList(char *buffer) {
     argsList[i] = strsep(&buffer, " \t\n");
 
     while (argsList[i] != NULL) {
-        if (*argsList[i] != '\0')
+        if (*argsList[i] != '\0') {
+            if (loggingFlag == true) {
+                fputs(argsList[i], logFile);
+                fputs("\n", logFile);
+            }
             i++;
+        }
         argsList[i] = strsep(&buffer, " \t\n");
     }
 
@@ -61,33 +72,55 @@ char ** getArgsList(char *buffer) {
 
 /* Checks input for built-in commands */
 bool cmdChecker(char *argsList[]) {
-    int i = 0;
     static char *commands[4] = {"exit\0", "cd\0", "path\0", "logging\0"};
-
-    while (argsList[i] != NULL) {
-        for (int j = 0; j < 4; j++) {
-            if (strcmp(argsList[i], commands[j]) == 0) {
-                if (j == 0)             // exit
-                    exit(0);
-                else if (j == 1) {      // change directory
-                    if (chdir(argsList[1]) == -1)
-                        printErrorMessage(myInitials);
-                    return true;
-                }
-                else if (j == 2) {      // path
-                    char path[1024];
-                    if (argsList[i+2] == NULL) {
-                        if (getcwd(path, sizeof(path)) == NULL)
-                            printErrorMessage(myInitials);
-                        printf("Path is set to: %s\n", path);
-                    }
-                    return true;
-                }
-            }
+    for (int i = 0; i < 4; i++) {
+        if (strcmp(argsList[0], commands[i]) == 0) {
+            cmdExecutor(i, argsList);
+            return true;
         }
-        i++;
     }
     return false;
+}
+
+/* Checks input for built-in commands */
+void cmdExecutor(int cmd, char *argsList[]) {
+    if (cmd == 0) {            // exit
+        if (loggingFlag == true) {
+            if (fclose(logFile) != 0)
+                printErrorMessage(myInitials);
+
+            printf("file closed\n");
+        }
+        exit(0);
+    }
+    else if (cmd == 1) {      // change directory
+        if (chdir(argsList[1]) == -1)
+            printErrorMessage(myInitials);
+    }
+    else if (cmd == 2) {        // path
+        if (argsList[1] == NULL) {
+        }
+        else {
+
+        }
+    }
+    else if (cmd == 3) {        // logging
+        if (argsList[1] == NULL)
+            return;
+        else if (strcmp(argsList[1], "off\0") == 0) {
+            loggingFlag = false;
+            if (logFile == NULL)
+                return;
+            else if (fclose(logFile) != 0)
+                printErrorMessage(myInitials);
+        }
+        else {
+            logFile = fopen(argsList[1], "w");
+            loggingFlag = true;
+            printf("logging on\n");
+        }
+
+    }
 }
 
 /* Executes input given from interactive mode 
