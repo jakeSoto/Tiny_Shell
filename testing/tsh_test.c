@@ -97,6 +97,19 @@ void cmdExecutor(int cmd, char *argsList[]) {
         }
     }
     else if (cmd == 3) {        // logging
+        if (argsList[1] == NULL)
+            return;
+        else if (strcmp(argsList[1], "off\0") == 0) {
+            loggingFlag = false;
+            if (logFile == NULL)
+                return;
+            else {
+                logFile = fopen(argsList[1], "w");
+                loggingFlag = true;
+            }
+
+        }
+
 
     }
 }
