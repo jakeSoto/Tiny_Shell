@@ -22,15 +22,25 @@ int main(int argc, char *argv[]) {
     size_t bufferSize = 0;
     ssize_t nread;
 
-    /* Interactive mode */
-    while(1) {
-        printf("tsh> ");
-        if ((nread = getline(&buffer, &bufferSize, stdin)) == -1)
-            exit(0);
+    /* Batch Mode */
+    infile = fopen(argv[1], "r");
+    if (infile != NULL) {
+        printf("Batch Mode\n");
 
-        args_list = getArgsList(buffer, " \t\n");
-        if (!cmdChecker(args_list))
-            executeCommand(args_list);
+    }
+
+    /* Interactive mode */
+    else {
+        printf("Interactive mode\n");
+        while(1) {
+            printf("tsh> ");
+            if ((nread = getline(&buffer, &bufferSize, stdin)) == -1)
+                exit(0);
+
+            args_list = getArgsList(buffer, " \t\n");
+            if (!cmdChecker(args_list))
+                executeCommand(args_list);
+        }
     }
 
     free(buffer);
@@ -54,8 +64,11 @@ char ** getArgsList(char *buffer, char *delims) {
     argsList[i] = strsep(&buffer, delims);
     
     while (argsList[i] != NULL) {
+        if (loggingFlag == true)
+            fputs(argsList[i], logFile);
         if (*argsList[i] != '\0')
             i++;
+
         argsList[i] = strsep(&buffer, delims);
     }
 
@@ -64,7 +77,6 @@ char ** getArgsList(char *buffer, char *delims) {
 
 /* Checks input for built-in commands */
 bool cmdChecker(char *argsList[]) {
-    //int i = 0;
     static char *commands[4] = {"exit\0", "cd\0", "path\0", "logging\0"};
     for (int i = 0; i < 4; i++) {
         if (strcmp(argsList[0], commands[i]) == 0) {
@@ -76,12 +88,19 @@ bool cmdChecker(char *argsList[]) {
 }
 
 void cmdExecutor(int cmd, char *argsList[]) {
-    if (cmd == 0)             // exit
+    if (cmd == 0) {            // exit
+        if (loggingFlag == true) {
+            if (fclose(logFile) != 0)
+                printErrorMessage(myInitials);
+
+            printf("file closed\n");
+        }
         exit(0);
+    }
     else if (cmd == 1) {      // change directory
         if (chdir(argsList[1]) == -1)
             printErrorMessage(myInitials);
-    }
+    }/*
     else if (cmd == 2) {      // path
         char path[1024] = {"/bin"};
         int pathCount = 1;
@@ -95,7 +114,7 @@ void cmdExecutor(int cmd, char *argsList[]) {
             path[pathCount] = strsep(argsList[1], ":");
             pathCount++;
         }
-    }
+    } */
     else if (cmd == 3) {        // logging
         if (argsList[1] == NULL)
             return;
@@ -103,13 +122,14 @@ void cmdExecutor(int cmd, char *argsList[]) {
             loggingFlag = false;
             if (logFile == NULL)
                 return;
-            else {
-                logFile = fopen(argsList[1], "w");
-                loggingFlag = true;
-            }
-
+            else if (fclose(logFile) != 0)
+                printErrorMessage(myInitials);
         }
-
+        else {
+            logFile = fopen(argsList[1], "w");
+            loggingFlag = true;
+            printf("logging on\n");
+        }
 
     }
 }
@@ -122,7 +142,7 @@ void executeCommand(char *argsList[]) {
     if (pid < 0)
         printErrorMessage(myInitials);
     else if (pid == 0) {    // Child process
-        int execStatus = execvp(&argsList[0], argsList);
+        int execStatus = execvp(argsList[0], argsList);
         if (execStatus == -1)
             printErrorMessage(myInitials);
     }
