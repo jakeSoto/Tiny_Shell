@@ -22,16 +22,22 @@ int main(int argc, char *argv[]) {
     size_t bufferSize = 0;
     ssize_t nread;
 
-    /* Batch Mode */
     infile = fopen(argv[1], "r");
-    if (infile != NULL) {
-        printf("Batch Mode\n");
 
+    if (infile != NULL) {   /* Batch Mode */
+        while (1) {
+            ssize_t bread = getline(&buffer, &bufferSize, infile);
+            if (bread == -1)
+                exit(0);
+
+            char **batch_list = getArgsList(buffer, " \t\n");
+            if (!cmdChecker(batch_list))
+                executeCommand(batch_list);
+        }
+        
+        fclose(infile);
     }
-
-    /* Interactive mode */
-    else {
-        printf("Interactive mode\n");
+    else {              /* Interactive mode */
         while(1) {
             printf("tsh> ");
             if ((nread = getline(&buffer, &bufferSize, stdin)) == -1)
