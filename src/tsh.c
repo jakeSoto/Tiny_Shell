@@ -12,6 +12,7 @@ bool loggingFlag = false;
 FILE *logFile = NULL;
 
 /* Function Definitions */
+void printErrorMessage(char *userInitials);
 char ** getArgsList(char *buffer);
 bool cmdChecker(char *argsList[]);
 void cmdExecutor(int cmd, char *argsList[]);
@@ -25,15 +26,35 @@ int main(int argc, char *argv[]) {
     size_t bufferSize = 0;
     ssize_t nread;
 
-    /* Interactive mode */
-    while(1) {
-        printf("tsh> ");
-        if ((nread = getline(&buffer, &bufferSize, stdin)) == -1)
+    if (argv[1] != NULL) {   /* Batch Mode */
+        infile = fopen(argv[1], "r");
+        if (infile == NULL || argc > 2) {
+            printErrorMessage(myInitials);
             exit(0);
+        }
 
-        args_list = getArgsList(buffer);
-        if (!cmdChecker(args_list))
-            executeCommand(args_list);
+        while(1) {
+            if ((nread = getline(&buffer, &bufferSize, infile)) == -1)
+                exit(0);
+
+            args_list = getArgsList(buffer);
+            if (!cmdChecker(args_list))
+                executeCommand(args_list);
+        }
+
+        fclose(infile);
+        exit(0);
+    }
+    else {              /* Interactive mode */
+        while(1) {
+            printf("tsh> ");
+            if ((nread = getline(&buffer, &bufferSize, stdin)) == -1)
+                exit(0);
+
+            args_list = getArgsList(buffer);
+            if (!cmdChecker(args_list))
+                executeCommand(args_list);
+        }
     }
 
     free(buffer);
@@ -98,10 +119,18 @@ void cmdExecutor(int cmd, char *argsList[]) {
             printErrorMessage(myInitials);
     }
     else if (cmd == 2) {        // path
-        if (argsList[1] == NULL) {
+        char *path[1024] = {"/bin", NULL};
+        
+        if (argsList[1] == NULL) {  //no args
+            int i = 0;
+            printf("Path is set to ");
+            while (path[i] != NULL) {
+                printf("%s:", path[i]);
+                i++;
+            }
+            printf("\n");
         }
-        else {
-
+        else {  //args
         }
     }
     else if (cmd == 3) {        // logging
@@ -116,8 +145,12 @@ void cmdExecutor(int cmd, char *argsList[]) {
         }
         else {
             logFile = fopen(argsList[1], "w");
-            loggingFlag = true;
-            printf("logging on\n");
+            if (logFile == NULL) {
+                printErrorMessage(myInitials);
+                return;
+            }
+            else
+                loggingFlag = true;
         }
 
     }
