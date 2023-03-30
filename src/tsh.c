@@ -103,7 +103,7 @@ bool cmdChecker(char *argsList[]) {
     return false;
 }
 
-/* Checks input for built-in commands */
+/* Executes built-in commands */
 void cmdExecutor(int cmd, char *argsList[]) {
     if (cmd == 0) {            // exit
         if (loggingFlag == true) {
@@ -121,7 +121,7 @@ void cmdExecutor(int cmd, char *argsList[]) {
     else if (cmd == 2) {        // path
         static char *path[1024] = {"/bin", NULL};
         
-        if (argsList[1] == NULL) {  //no args
+        if (argsList[1] == NULL) {
             int i = 0;
             printf("Path is set to ");
             while (path[i] != NULL) {
@@ -130,7 +130,7 @@ void cmdExecutor(int cmd, char *argsList[]) {
             }
             printf("\n");
         }
-        else {  //args
+        else {
             //path = strsep(&argsList[1], " :\t\n");
         }
     }
