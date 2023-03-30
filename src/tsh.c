@@ -119,7 +119,7 @@ void cmdExecutor(int cmd, char *argsList[]) {
             printErrorMessage(myInitials);
     }
     else if (cmd == 2) {        // path
-        char *path[1024] = {"/bin", NULL};
+        static char *path[1024] = {"/bin", NULL};
         
         if (argsList[1] == NULL) {  //no args
             int i = 0;
@@ -131,6 +131,7 @@ void cmdExecutor(int cmd, char *argsList[]) {
             printf("\n");
         }
         else {  //args
+            //path = strsep(&argsList[1], " :\t\n");
         }
     }
     else if (cmd == 3) {        // logging
