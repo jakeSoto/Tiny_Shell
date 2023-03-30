@@ -9,6 +9,8 @@
 char *myInitials = "JS";
 bool loggingFlag = false;
 FILE *logFile = NULL;
+
+void printErrorMessage(char *userInitials);
 char ** getArgsList(char *buffer, char *delims);
 bool cmdChecker(char *argsList[]);
 void cmdExecutor(int cmd, char *argsList[]);
@@ -22,20 +24,24 @@ int main(int argc, char *argv[]) {
     size_t bufferSize = 0;
     ssize_t nread;
 
-    infile = fopen(argv[1], "r");
-
-    if (infile != NULL) {   /* Batch Mode */
-        while (1) {
-            ssize_t bread = getline(&buffer, &bufferSize, infile);
-            if (bread == -1)
-                exit(0);
-
-            char **batch_list = getArgsList(buffer, " \t\n");
-            if (!cmdChecker(batch_list))
-                executeCommand(batch_list);
+    if (argv[1] != NULL) {   /* Batch Mode */
+        infile = fopen(argv[1], "r");
+        if (infile == NULL || argc > 2) {
+            printErrorMessage(myInitials);
+            exit(0);
         }
-        
+int i = 0;
+        while ((nread = getline(&buffer, &bufferSize, infile)) != -1) {
+            args_list = getArgsList(buffer, " \t\n");
+
+            if (!cmdChecker(args_list)) {
+                printf("%d : %s\n", i, args_list[0]);
+            }
+            i++;
+        }
+
         fclose(infile);
+        exit(0);
     }
     else {              /* Interactive mode */
         while(1) {
@@ -99,28 +105,30 @@ void cmdExecutor(int cmd, char *argsList[]) {
             if (fclose(logFile) != 0)
                 printErrorMessage(myInitials);
 
-            printf("file closed\n");
+            printf("logging off\n");
         }
         exit(0);
     }
     else if (cmd == 1) {      // change directory
         if (chdir(argsList[1]) == -1)
             printErrorMessage(myInitials);
-    }/*
+    }
     else if (cmd == 2) {      // path
-        char path[1024] = {"/bin"};
-        int pathCount = 1;
+        char *path[1024] = {"/bin", NULL};
         
         if (argsList[1] == NULL) {  //no args
-            if (getcwd(path, sizeof(path)) == NULL)
-                printErrorMessage(myInitials);
-            printf("Path is set to: %s\n", path);
+            int i = 0;
+            printf("Path is set to ");
+            while (path[i] != NULL) {
+                printf("%s:", path[i]);
+                i++;
+            }
+            printf("\n");
         }
         else {  //args
-            path[pathCount] = strsep(argsList[1], ":");
-            pathCount++;
+            //path = getArgsList(argsList[1], ":");
         }
-    } */
+    } 
     else if (cmd == 3) {        // logging
         if (argsList[1] == NULL)
             return;
@@ -133,6 +141,7 @@ void cmdExecutor(int cmd, char *argsList[]) {
         }
         else {
             logFile = fopen(argsList[1], "w");
+            if (logFile != NULL)
             loggingFlag = true;
             printf("logging on\n");
         }
